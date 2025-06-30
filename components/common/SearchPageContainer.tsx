@@ -94,7 +94,7 @@ export default function SearchPageContainer() {
         <>
           <div className="flex font-bold justify-between  mx-auto text-xl md:text-2xl items-center my-1 py-1 flex-row">
             <div className="mx-1 flex gap-2 items-center">
-              Recently Searched
+              Recently Searched FUCK
               <div>
                 <CaretRightIcon className="h-full " />
               </div>

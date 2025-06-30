@@ -39,7 +39,7 @@ export const SearchCommandBox = ({ children, searchType = 'tvshow' }: { children
     const debouncedSearch = useCallback(
         debounce((value: string) => {
             setQuery(value.length >= 2 ? value : '');
-        }, 500),
+        }, 750),
         []
     );
 
@@ -54,6 +54,8 @@ export const SearchCommandBox = ({ children, searchType = 'tvshow' }: { children
         setQuery('')
         setInputValue('')
     };
+
+    
     const getFormattedDate = (item: { releaseDate?: string; first_air_date?: string; release_date?: string; }) => {
         const dateString = item.releaseDate || item.first_air_date || item.release_date;
         if (!dateString) return null;
@@ -63,6 +65,7 @@ export const SearchCommandBox = ({ children, searchType = 'tvshow' }: { children
         if (isNaN(date.getTime())) return null;
         return date.getFullYear().toString();
     };
+
     const renderSearchResults = () => {
         if (isFetching) return <Command.Item>Loading <Loader2 className="w-4 h-4 animate-spin ml-1" /></Command.Item>;
         if (error) return <Command.Empty>Error: {(error as Error).message}</Command.Empty>;
@@ -134,17 +137,7 @@ export const SearchCommandBox = ({ children, searchType = 'tvshow' }: { children
                 })}
             </CommandGroup>)
     };
-    React.useEffect(() => {
-        const down = (e: KeyboardEvent) => {
-            if (e.key === "j" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                setOpen((open) => !open)
-            }
-        }
-
-        document.addEventListener("keydown", down)
-        return () => document.removeEventListener("keydown", down)
-    }, [])
+    
     return (
         <>
             <Command>

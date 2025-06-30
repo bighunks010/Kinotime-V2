@@ -30,16 +30,16 @@ export default function Episode(props: EpisodeProps) {
 	) => {
 		return type === 'movie'
 			? `https://${domain}/embed/${type}/${id}`
-			: `https://${domain}/embed/tv/${id}/${seasonNumber}/${episodeNumber}`;
+			: `https://${domain}/embed/${type}?tmdb=${id}&season=${seasonNumber}&episode=${episodeNumber}&autoplay=1&autonext=1`
 	};
 	const sourcesMap = [
 		
 
 		{
 			name: 'vidsrc.xyz',
-			label: 'VidSRC',
+			label: 'VIDSRC',
 			position: 5,
-			url: generateUrl('vidsrc.to', type, id, seasonNumber, episodeNumber),
+			url: generateUrl('vidsrc.xyz', type, id, seasonNumber, episodeNumber),
 		},
 		
 
