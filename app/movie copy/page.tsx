@@ -31,7 +31,6 @@ export default async function page() {
           showRank={true}
           type="movie"
         />
-        
         {genres &&
           genres.map((genre: any) => (
             <Suspense

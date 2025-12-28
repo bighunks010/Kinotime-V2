@@ -2,16 +2,28 @@ import axios from 'axios';
 import { Episode, Show } from './types';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
-const API_KEY = 'e3ca0f283f1ab903fd5e2324faadd88e';
+
+const getApiKey = () => {
+	const key = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+	if (!key) {
+		throw new Error('NEXT_PUBLIC_TMDB_API_KEY is not defined in environment variables');
+	}
+	return key;
+};
 
 const fetchData = async (endpoint: string, params: object = {}) => {
 	try {
 		const url = new URL(`${BASE_URL}${endpoint}`);
-		Object.entries({ ...params, api_key: API_KEY }).forEach(([key, value]) =>
+		Object.entries(params).forEach(([key, value]) =>
 			url.searchParams.append(key, String(value))
 		);
 
-		const response = await axios.get(url.toString());
+		const response = await axios.get(url.toString(), {
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		});
 		return response.data;
 	} catch (error) {
 		console.error(`Error fetching data from ${endpoint}:`, error);

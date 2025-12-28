@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Forward, Settings } from 'lucide-react';
+import useVideoSourceStore from '@/store/videoSourceStore';
 
 
 interface EpisodeProps {
@@ -86,10 +87,23 @@ export default function Episode(props: EpisodeProps) {
 		
 
 	];
-	const [provider, setProvider] = useState(sourcesMap[0]);
+	
+	// Use Zustand store for persistent source selection
+	const selectedSource = useVideoSourceStore((state) => state.selectedSource);
+	const setSelectedSource = useVideoSourceStore((state) => state.setSelectedSource);
+	
+	// Find the provider based on stored selection, fallback to first source
+	const [provider, setProvider] = useState(() => {
+		const savedProvider = sourcesMap.find((source) => source.name === selectedSource);
+		return savedProvider || sourcesMap[0];
+	});
+	
 	const handleSelectOnChange = (value: string) => {
 		const selectedProvider = sourcesMap.find((source) => source.name === value);
-		setProvider(selectedProvider || sourcesMap[0]);
+		if (selectedProvider) {
+			setProvider(selectedProvider);
+			setSelectedSource(selectedProvider.name); // Persist to localStorage
+		}
 	};
 
 	useEffect(() => {
@@ -117,7 +131,7 @@ export default function Episode(props: EpisodeProps) {
 		<div id="episode-player" className="">
 			<div className="flex items-center justify-between mb-2">
 				<Select
-					defaultValue={provider.name || sourcesMap[0].name}
+					value={provider.name}
 					onValueChange={handleSelectOnChange}
 				>
 					<SelectTrigger className="w-fit h-12 ">

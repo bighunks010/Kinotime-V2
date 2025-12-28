@@ -19,8 +19,8 @@ import useRecentSearchStore from "@/store/recentsSearchStore";
 export default function SearchBar() {
   const [open, setOpen] = useState(false);
   const searchStore = useSearchStore();
-  const { searches, addToSearchList, clearSearchList, removeFromSearchList } =
-    useRecentSearchStore();
+  const recentlySearched = useRecentSearchStore((state) => state.recentlySearched);
+  const addToRecentlySearched = useRecentSearchStore((state) => state.addToRecentlySearched);
   async function searchShowsByQuery(value: string) {
     searchStore.setQuery(value);
     if (value) searchStore.setLoading(true);
@@ -31,13 +31,13 @@ export default function SearchBar() {
     }
   }
   const handleAddToHistory = (ep: any) => {
-    addToSearchList(ep);
+    addToRecentlySearched(ep);
   };
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "j" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen((prev) => !prev);
       }
     };
 
@@ -80,7 +80,7 @@ export default function SearchBar() {
                     <div className="flex items-center gap-2">
                       <div>{show.name || show.title}</div>
                       {show.release_date || show.first_air_date ? (
-                        <Button className="border-0" size="xs">
+                        <Button className="border-0" size="sm">
                           {show.release_date?.split("-")[0] ||
                             show.first_air_date?.split("-")[0]}
                         </Button>
@@ -92,7 +92,7 @@ export default function SearchBar() {
                           ? "bg-primary"
                           : "bg-white text-primary"
                       }`}
-                      size="xs"
+                      size="sm"
                     >
                       {show.media_type === "tv" ? "TV" : "Movie"}
                     </Button>
@@ -108,14 +108,14 @@ export default function SearchBar() {
                   <CommandItem className=" flex my-2 bg-secondary animate-pulse cursor-pointer h-10 justify-between gap-2"></CommandItem>
                 </>
               )}
-              {searches.length > 0 && <CommandSeparator className="mb-3" />}
+              {recentlySearched.length > 0 && <CommandSeparator className="mb-3" />}
             </CommandGroup>
           ) : (
             <CommandEmpty>No results found.</CommandEmpty>
           )}
-          {searches.length > 0 && (
+          {recentlySearched.length > 0 && (
             <CommandGroup heading="Recent Searches">
-              {searches.map((result) => (
+              {recentlySearched.map((result: any) => (
                 <Link
                   key={result.id}
                   onClick={() => {
@@ -131,7 +131,7 @@ export default function SearchBar() {
                     <div className="flex items-center gap-2">
                       <div>{result.name || result.title}</div>
                       {result.release_date || result.first_air_date ? (
-                        <Button className="border-0" size="xs">
+                        <Button className="border-0" size="sm">
                           {result.release_date?.split("-")[0] ||
                             result.first_air_date?.split("-")[0]}
                         </Button>
@@ -143,7 +143,7 @@ export default function SearchBar() {
                           ? "bg-primary"
                           : "bg-white text-primary"
                       }`}
-                      size="xs"
+                      size="sm"
                     >
                       {result.media_type === "tv" ? "TV" : "Movie"}
                     </Button>

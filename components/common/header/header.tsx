@@ -16,14 +16,20 @@ const categories = [
 	{
 		title: 'Movies',
 		href: '/movie',
-		icon: <FilmIcon />,
 	},
 	{
 		title: 'TV',
 		href: '/tv',
-		icon: <TvIcon />,
+	
 	},
 
+	/*
+		{
+		title: 'Anime',
+		href: '/anime',
+	}
+		*/
+	
 ];
 
 export const Header = () => {
@@ -48,13 +54,11 @@ export const Header = () => {
 						className={`flex items-center h-10`}
 						transition={{ type: 'spring', stiffness: 300, damping: 20 }}
 					>
-						<img className="w-[50px] h-10" alt="" src="/Cinema.webp" />
-						<img className="w-[200px] h-20" alt="" src="/logo.webp" />
-
-					</motion.div>
-				</Link>
-				<div className="w-fit items-center  gap-4 flex">
-					{categories.map((el) => (
+					<img className="w-[75px] h-[60px]" alt="" src="/Cinema.webp" />
+				<img className="w-[350px] h-[140px]" alt="" src="/logo.webp" />
+				</motion.div>
+			</Link>
+			<div className="w-fit items-center  gap-4 flex">					{categories.map((el) => (
 						<Link key={el.href} className="cursor-pointer z-40 relative" href={el.href}>
 							<motion.div
 								className={`flex items-center gap-2 h-12 border-b-2  px-1  ${isActiveRoute(el.href) ? 'text-primary' : ' border-transparent'
@@ -75,7 +79,7 @@ export const Header = () => {
 					))}
 
 					<SearchCommandBox searchType={isActiveRoute('/anime') ? 'anime' : 'tvshow'}>
-						<div className="bg-primary p-2 rounded-full hover:scale-95 duration-150 hover:bg-primary/80">
+						<div className="bg-primary cursor-pointer p-2 rounded-full hover:scale-95 duration-150 hover:bg-primary/80">
 							<MagnifyingGlassIcon className="w-5 h-5 text-background" />
 						</div>
 					</SearchCommandBox>

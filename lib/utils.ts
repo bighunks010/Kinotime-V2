@@ -3,8 +3,15 @@ import { twMerge } from 'tailwind-merge';
 import { Episode, Show } from './types';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-const apiKey =
-	'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5M2M5MWI1YTA3NTY1NGVkYTIzODgwM2UzZDRmMjY0OCIsIm5iZiI6MTY5MTAwNjc2MC4wMDEsInN1YiI6IjY0Y2FiNzI3ZTI2M2JiMDBhZDc4NzJmZCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.tnglax_vK1FQNi0Yz62M0DYdaNe2MGWUs5w55nXMW_M';
+
+// Centralized API key - always use environment variable
+const getApiKey = () => {
+	const key = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+	if (!key) {
+		throw new Error('NEXT_PUBLIC_TMDB_API_KEY is not defined in environment variables');
+	}
+	return key;
+};
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -13,10 +20,10 @@ export function cn(...inputs: ClassValue[]) {
 export async function fetchRowData(link: string) {
 	try {
 		const url = new URL(
-			`https://api.themoviedb.org/3/${link}?language=en-USinclude_adult=false&include_video=false`
+			`https://api.themoviedb.org/3/${link}?language=en-US&include_adult=false&include_video=false`
 		);
 		const headers = {
-			Authorization: `Bearer ${apiKey}`,
+			Authorization: `Bearer ${getApiKey()}`,
 		};
 		const response = await fetch(url.toString(), {
 			headers,
@@ -54,28 +61,43 @@ export async function fetchDetails(id: string, type: string) {
 }
 export async function fetchDetailsTMDB(id: string, type: string) {
 	try {
-		const url = new URL(
-			`https://api.themoviedb.org/3/${type}/${id}?api_key=${process.env.TMDB_API_KEY}`
-		);
-		const response = await fetch(url.toString(), { cache: 'no-cache' });
-		if (!response.ok) throw new Error('Failed to fetch data');
+		const url = `https://api.themoviedb.org/3/${type}/${id}`;
+		const response = await fetch(url, { 
+			cache: 'no-cache',
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		});
+		if (!response.ok) {
+			console.error(`TMDB API Error: ${response.status} ${response.statusText}`);
+			throw new Error(`Failed to fetch data: ${response.status}`);
+		}
 		const data = await response.json();
 		return data;
 	} catch (error) {
-		console.log(error);
+		console.error('fetchDetailsTMDB error:', error);
+		throw error;
 	}
 }
 export async function fetchRecommendations(id: string, showType: string, type: string) {
 	try {
-		const url = new URL(
-			`https://api.themoviedb.org/3/${showType}/${id}/${type}?language=en-US&page=1&api_key=${process.env.TMDB_API_KEY}`
-		);
-		const response = await fetch(url.toString());
-		if (!response.ok) throw new Error('Failed to fetch data');
+		const url = `https://api.themoviedb.org/3/${showType}/${id}/${type}?language=en-US&page=1`;
+		const response = await fetch(url, {
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		});
+		if (!response.ok) {
+			console.error(`Failed to fetch ${type} for ${showType}/${id}:`, response.status, response.statusText);
+			throw new Error(`Failed to fetch data: ${response.status}`);
+		}
 		const data = await response.json();
 		return data;
 	} catch (error) {
-		console.log(error);
+		console.error('fetchRecommendations error:', error);
+		throw error;
 	}
 }
 export async function fetchMovieLinks(movie: string, longID: string, callback: any) {
@@ -105,8 +127,14 @@ export async function fetchsusflixLinks(movie: string) {
 
 export async function fetchShowData(endpoint: string) {
 	const response = await fetch(
-		`https://api.themoviedb.org/3/${endpoint}?api_key=${process.env.TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&watch_region=US&page=1`,
-		{ next: { revalidate: 21600 } }
+		`https://api.themoviedb.org/3/${endpoint}?language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&watch_region=US&page=1`,
+		{ 
+			next: { revalidate: 21600 },
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		}
 	);
 
 	if (!response.ok) {
@@ -137,9 +165,13 @@ export async function getNewAndPopularShows() {
 
 export async function searchShows(query: string) {
 	const res = await fetch(
-		`https://api.themoviedb.org/3/search/multi?api_key=e3ca0f283f1ab903fd5e2324faadd88e&query=${encodeURIComponent(
-			query
-		)}`
+		`https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(query)}`,
+		{
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		}
 	);
 
 	if (!res.ok) {
@@ -177,7 +209,7 @@ export async function fetchCarousalData(category: string, type: string) {
 			`https://api.themoviedb.org/3/${category}/${type}?language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1`
 		);
 		const headers = {
-			Authorization: `Bearer ${apiKey}`,
+			Authorization: `Bearer ${getApiKey()}`,
 		};
 		const response = await fetch(url.toString(), {
 			headers,
@@ -193,11 +225,8 @@ export async function fetchCarousalData(category: string, type: string) {
 }
 
 export async function fetchGenres(type: string) {
-	if (!apiKey) {
-		throw new Error('TMDB API key is missing');
-	}
 	const headers = {
-		Authorization: `Bearer ${apiKey}`,
+		Authorization: `Bearer ${getApiKey()}`,
 	};
 	const res = await fetch(`https://api.themoviedb.org/3/genre/${type}/list?language=en`, {
 		headers,
@@ -213,12 +242,8 @@ export async function fetchGenres(type: string) {
 }
 
 export async function fetchGenreById(type: string, id: string, page: number = 1) {
-	if (!apiKey) {
-		throw new Error('TMDB API key is missing');
-	}
-
 	const headers = {
-		Authorization: `Bearer ${apiKey}`,
+		Authorization: `Bearer ${getApiKey()}`,
 	};
 
 	const queryParams = new URLSearchParams({
@@ -251,8 +276,13 @@ export const fetchSeasonEpisodes = async (
 	seasonNumber: number
 ): Promise<Episode[]> => {
 	try {
-		const url = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?language=en-US&api_key=${apiKey}`;
-		const response = await axios.get(url);
+		const url = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?language=en-US`;
+		const response = await axios.get(url, {
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json'
+			}
+		});
 		if (response.data && response.data.episodes) {
 			return response.data.episodes;
 		} else {
