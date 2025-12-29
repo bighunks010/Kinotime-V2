@@ -6,11 +6,11 @@ import axios from 'axios';
 
 // Centralized API key - always use environment variable
 const getApiKey = () => {
-	const key = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-	if (!key) {
-		throw new Error('NEXT_PUBLIC_TMDB_API_KEY is not defined in environment variables');
+	const token = process.env.NEXT_PUBLIC_TMDB_API_READ_ACCESS_TOKEN;
+	if (!token) {
+		throw new Error('NEXT_PUBLIC_TMDB_API_READ_ACCESS_TOKEN is not defined in environment variables');
 	}
-	return key;
+	return token;
 };
 
 export function cn(...inputs: ClassValue[]) {
