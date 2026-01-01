@@ -33,6 +33,7 @@ const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons, showId }) => {
 		data: episodes,
 		isLoading,
 		isError,
+		error,
 	} = useQuery({
 		queryKey: ['episodes', showId, activeSeason],
 		queryFn: () => fetchSeasonEpisodes(showId, activeSeason),
@@ -147,7 +148,12 @@ const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons, showId }) => {
 				{isLoading ? (
 					<div>Loading episodes...</div>
 				) : isError ? (
-					<div>Error loading episodes</div>
+					<div className="text-red-500">
+						<p>Error loading episodes</p>
+						<p className="text-sm mt-2">
+							{error instanceof Error ? error.message : 'Unknown error occurred'}
+						</p>
+					</div>
 				) : (
 					episodes && <SeasonContent view={view} showId={showId} episodes={episodes} />
 				)}

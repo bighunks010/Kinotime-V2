@@ -14,13 +14,15 @@ const getApiKey = () => {
 const fetchData = async (endpoint: string, params: object = {}) => {
 	try {
 		const url = new URL(`${BASE_URL}${endpoint}`);
+		// Add API key to query parameters
+		url.searchParams.append('api_key', getApiKey());
+		
 		Object.entries(params).forEach(([key, value]) =>
 			url.searchParams.append(key, String(value))
 		);
 
 		const response = await axios.get(url.toString(), {
 			headers: {
-				Authorization: `Bearer ${getApiKey()}`,
 				accept: 'application/json'
 			}
 		});
@@ -107,10 +109,16 @@ export const fetchSeasonEpisodes = async (
 	showId: string,
 	seasonNumber: number
 ): Promise<Episode[]> => {
-	const data = await fetchData(`/tv/${showId}/season/${seasonNumber}`, { language: 'en-US' });
-	if (data.episodes) {
-		return data.episodes;
-	} else {
-		throw new Error('No episodes data found in the response');
+	try {
+		const data = await fetchData(`/tv/${showId}/season/${seasonNumber}`, { language: 'en-US' });
+		console.log('Season episodes response:', data);
+		if (data.episodes) {
+			return data.episodes;
+		} else {
+			throw new Error('No episodes data found in the response');
+		}
+	} catch (error) {
+		console.error('Error in fetchSeasonEpisodes:', error);
+		throw error;
 	}
 };
