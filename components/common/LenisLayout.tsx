@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactLenis } from "@studio-freight/react-lenis";
-import { useState } from "react";
 
 const LenisLayout = ({ children }: { children: React.ReactNode }) => {
   const lenisOptions = {

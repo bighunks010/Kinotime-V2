@@ -1,10 +1,12 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
-import { Forward, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import useVideoSourceStore from '@/store/videoSourceStore';
+import useAnimeStore from '@/store/animeStore';
+import { getMegaPlayUrl, resolveAnimeEpisode } from '@/lib/anime';
 
 
 interface EpisodeProps {
@@ -14,13 +16,44 @@ interface EpisodeProps {
 	type: string;
 	episodeNumber?: any;
 	seasonNumber?: any;
-	getNextEp?: () => void;
+	getNextEp?: (season: any, episode: any) => void;
 }
 
 export default function Episode(props: EpisodeProps) {
 	const { id, type, seasonNumber, episodeNumber, getNextEp } = props;
 
 	const iframeRef = useRef<HTMLIFrameElement>(null);
+
+	// Anime store
+	const isAnime = useAnimeStore((state) => state.isAnime);
+	const animeLang = useAnimeStore((state) => state.animeLang);
+	const setAnimeLang = useAnimeStore((state) => state.setAnimeLang);
+	const malId = useAnimeStore((state) => state.malId);
+	const franchise = useAnimeStore((state) => state.franchise);
+	const tmdbSeasonEpCounts = useAnimeStore((state) => state.tmdbSeasonEpCounts);
+
+	// Resolve the correct MAL ID + episode number using the franchise map.
+	// Handles TMDB lumping multiple MAL seasons into one (e.g. 60 eps → 3×20).
+	// Falls back to raw malId + episodeNumber when franchise data isn't loaded yet.
+	const resolved = useMemo(() => {
+		if (!isAnime) return null;
+
+		if (franchise.length > 0) {
+			return resolveAnimeEpisode(
+				franchise,
+				Number(seasonNumber || 1),
+				Number(episodeNumber || 1),
+				tmdbSeasonEpCounts
+			);
+		}
+
+		// Fallback: use the single malId directly (before franchise loads)
+		if (malId) {
+			return { malId, episode: Number(episodeNumber || 1) };
+		}
+
+		return null;
+	}, [isAnime, franchise, malId, seasonNumber, episodeNumber, tmdbSeasonEpCounts]);
 
 	const generateUrl = (
 		domain: string,
@@ -33,71 +66,106 @@ export default function Episode(props: EpisodeProps) {
 			? `https://${domain}/embed/${type}/${id}`
 			: `https://${domain}/embed/${type}?tmdb=${id}&season=${seasonNumber}&episode=${episodeNumber}&autoplay=1&autonext=1`
 	};
-	const sourcesMap = [
-		
 
-		{
-			name: 'vidsrc.xyz',
-			label: 'VIDSRC',
-			position: 5,
-			url: generateUrl('vidsrc.xyz', type, id, seasonNumber, episodeNumber),
-		},
-		
+	const sourcesMap = useMemo(() => {
+		// MegaPlay anime source — uses franchise-resolved MAL ID + episode
+		const megaplaySources = isAnime && resolved
+			? [{
+				name: 'megaplay',
+				label: 'MegaPlay (Anime)',
+				ads: 'false',
+				url: getMegaPlayUrl(
+					resolved.malId,
+					type === 'movie' ? 1 : resolved.episode,
+					animeLang
+				),
+			}]
+			: [];
 
-		{
-			name: 'vidlink',
-			label: 'VidLink',
-			ads: 'false',
-			url:
-				type === 'movie'
-					? `https://vidlink.pro/movie/${id}`
-					: `https://vidlink.pro/tv/${id}/${seasonNumber}/${episodeNumber}?title=true`,
-		},
+		return [
+			...megaplaySources,
+			{
+				name: 'vidsrc.xyz',
+				label: 'VIDSRC',
+				position: 5,
+				url: generateUrl('vidsrc.xyz', type, id, seasonNumber, episodeNumber),
+			},
+			{
+				name: 'vidlink',
+				label: 'VidLink',
+				ads: 'false',
+				url:
+					type === 'movie'
+						? `https://vidlink.pro/movie/${id}`
+						: `https://vidlink.pro/tv/${id}/${seasonNumber}/${episodeNumber}?title=true`,
+			},
+			{
+				name: 'vidsrc.cc/v3',
+				label: 'KDStream',
+				ads: 'false',
+				url: generateUrl('vidsrc.cc/v3', type, id, seasonNumber, episodeNumber),
+			},
+			{
+				name: 'SmashyStream',
+				label: 'SmashyStream',
+				ads: 'false',
+				url:
+					type === 'movie'
+						? `https://player.smashy.stream/movie/${id}`
+						: `https://player.smashy.stream/tv/${id}?s=${seasonNumber}&e=${episodeNumber}`,
+			},
+			{
+				name: 'AutoEmbe',
+				label: 'FilmL',
+				ads: 'false',
+				url:
+					type === 'movie'
+						? `https://player.autoembed.cc/embed/movie/${id}`
+						: `https://player.smashy.stream/tv/${id}?s=${seasonNumber}&e=${episodeNumber}`,
+			},
+		];
+	}, [isAnime, resolved, animeLang, type, id, seasonNumber, episodeNumber]);
 
-	
-	
-		{
-			name: 'vidsrc.cc/v3',
-			label: 'KDStream',
-			ads: 'false',
-			url: generateUrl('vidsrc.cc/v3', type, id, seasonNumber, episodeNumber),
-		},
-
-		{
-			name: 'SmashyStream',
-			label: 'SmashyStream',
-			ads: 'false',
-			url:
-				type === 'movie'
-					? `https://player.smashy.stream/movie/${id}`
-					: `https://player.smashy.stream/tv/${id}?s=${seasonNumber}&e=${episodeNumber}`,
-		},
-		
-		{
-			name: 'AutoEmbe',
-			label: 'FilmL',
-			ads: 'false',
-			url:
-				type === 'movie'
-					? `https://player.autoembed.cc/embed/movie/${id}`
-					: `https://player.smashy.stream/tv/${id}?s=${seasonNumber}&e=${episodeNumber}`,
-		},
-	
-	
-		
-
-	];
-	
 	// Use Zustand store for persistent source selection
 	const selectedSource = useVideoSourceStore((state) => state.selectedSource);
 	const setSelectedSource = useVideoSourceStore((state) => state.setSelectedSource);
-	
+
 	// Find the provider based on stored selection, fallback to first source
 	const [provider, setProvider] = useState(() => {
+		// For anime, default to MegaPlay if available
+		if (isAnime && resolved) {
+			const megaplay = sourcesMap.find((s) => s.name === 'megaplay');
+			if (megaplay) return megaplay;
+		}
 		const savedProvider = sourcesMap.find((source) => source.name === selectedSource);
 		return savedProvider || sourcesMap[0];
 	});
-	
+
+	// Auto-select MegaPlay when franchise data (resolved) becomes available
+	useEffect(() => {
+		if (isAnime && resolved) {
+			const megaplay = sourcesMap.find((s) => s.name === 'megaplay');
+			if (megaplay) {
+				setProvider(megaplay);
+				setSelectedSource('megaplay');
+			}
+		}
+	}, [resolved]);
+
+	// When animeLang (sub/dub) changes, update the MegaPlay URL if it's the active provider
+	useEffect(() => {
+		if (provider.name === 'megaplay' && isAnime && resolved) {
+			setProvider((prev) => ({
+				...prev,
+				url: getMegaPlayUrl(
+					resolved.malId,
+					type === 'movie' ? 1 : resolved.episode,
+					animeLang
+				),
+			}));
+		}
+	}, [animeLang, resolved]);
+
 	const handleSelectOnChange = (value: string) => {
 		const selectedProvider = sourcesMap.find((source) => source.name === value);
 		if (selectedProvider) {
@@ -129,7 +197,8 @@ export default function Episode(props: EpisodeProps) {
 
 	return (
 		<div id="episode-player" className="">
-			<div className="flex items-center justify-between mb-2">
+			<div className="flex items-center justify-between mb-2 gap-2">
+				{/* Source selector */}
 				<Select
 					value={provider.name}
 					onValueChange={handleSelectOnChange}
@@ -139,9 +208,7 @@ export default function Episode(props: EpisodeProps) {
 						<SelectValue>
 							<div className="pr-10">{provider.label}</div>
 						</SelectValue>
-						
 					</SelectTrigger>
-					
 					<SelectContent>
 						{sourcesMap.map((source, index) => (
 							<SelectItem value={source.name} key={index}>
@@ -149,8 +216,35 @@ export default function Episode(props: EpisodeProps) {
 							</SelectItem>
 						))}
 					</SelectContent>
-
 				</Select>
+
+				{/* Sub/Dub toggle — only shown for anime */}
+				{isAnime && (
+					<div className="flex items-center rounded-lg border border-border overflow-hidden">
+						<button
+							onClick={() => setAnimeLang('sub')}
+							className={`px-3 py-2 text-sm font-medium transition-colors ${
+								animeLang === 'sub'
+									? 'bg-primary text-primary-foreground'
+									: 'bg-background text-muted-foreground hover:bg-muted'
+							}`}
+						>
+							SUB
+						</button>
+						<button
+							onClick={() => setAnimeLang('dub')}
+							className={`px-3 py-2 text-sm font-medium transition-colors ${
+								animeLang === 'dub'
+									? 'bg-primary text-primary-foreground'
+									: 'bg-background text-muted-foreground hover:bg-muted'
+							}`}
+						>
+							DUB
+						</button>
+					</div>
+				)}
+
+				{/* Next episode button */}
 				{getNextEp && type === 'tv' && (
 					<Button
 						className="flex gap-2"
@@ -177,8 +271,7 @@ export default function Episode(props: EpisodeProps) {
 				allowFullScreen
 				className="w-full h-full border-primary border rounded-lg aspect-video font-mono"
 				src={provider.url}
-			/> 
-			
+			/>
 		</div>
 	);
 }

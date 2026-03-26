@@ -4,8 +4,7 @@
 import useTVShowStore from '@/store/recentsStore';
 import Link from 'next/link';
 import React, { useEffect, useRef } from 'react';
-import { Button } from '../ui/button';
-import { ArrowBigDownDashIcon, ChevronLeft, ChevronRight, ImageIcon, X } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 import {
 	Carousel,
 	CarouselContent,

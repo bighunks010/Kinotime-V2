@@ -6,7 +6,7 @@ import { useSearchStore } from "@/store/searchStore";
 import { searchShows } from "@/lib/utils";
 import Row from "../container/Row";
 import { Button } from "../ui/button";
-import { Frown, Link, Loader2 } from "lucide-react";
+import { Frown } from "lucide-react";
 import ShowCard from "./Card";
 import { Show } from "@/lib/types";
 import { CaretRightIcon } from "@radix-ui/react-icons";
@@ -94,7 +94,7 @@ export default function SearchPageContainer() {
         <>
           <div className="flex font-bold justify-between  mx-auto text-xl md:text-2xl items-center my-1 py-1 flex-row">
             <div className="mx-1 flex gap-2 items-center">
-              Recently Searched FUCK
+              Recently Searched
               <div>
                 <CaretRightIcon className="h-full " />
               </div>

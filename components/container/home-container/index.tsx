@@ -2,12 +2,10 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { Header } from '@/components/common/header';
 import RecentlyWatchedTV from '@/components/common/RecentlyWatched';
 import WatchList from '@/components/common/WatchList';
 import { Separator } from '@/components/ui/separator';
 import MinimalSocialsFooter from '@/components/common/Footer';
-import { fetchGenres } from "@/lib/utils";
 import GenresPage from '../Genre';
 import FetchAndRenderRow from "@/components/container/FetchAndRenderRow";
 

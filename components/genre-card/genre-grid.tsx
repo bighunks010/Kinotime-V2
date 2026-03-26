@@ -1,10 +1,7 @@
 "use client";
-import { fetchGenres } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
-import { BentoGrid, BentoGridItem } from "../ui/bento-grid";
-import { Skeleton } from "../ui/skeleton";
+import React from "react";
 
 interface ColorMapEntry {
   colSpan: number;
@@ -149,41 +146,3 @@ const GenreGrid = ({ genres, type }: { genres: any; type: string }) => {
 };
 
 export default GenreGrid;
-const items = [
-  {
-    title: "The Dawn of Innovation",
-    description: "Explore the birth of groundbreaking ideas and inventions.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Digital Revolution",
-    description: "Dive into the transformative power of technology.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Art of Design",
-    description: "Discover the beauty of thoughtful and functional design.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Power of Communication",
-    description:
-      "Understand the impact of effective communication in our lives.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Pursuit of Knowledge",
-    description: "Join the quest for understanding and enlightenment.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Joy of Creation",
-    description: "Experience the thrill of bringing ideas to life.",
-    header: <Skeleton />,
-  },
-  {
-    title: "The Spirit of Adventure",
-    description: "Embark on exciting journeys and thrilling discoveries.",
-    header: <Skeleton />,
-  },
-];

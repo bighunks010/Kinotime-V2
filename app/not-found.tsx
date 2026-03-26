@@ -17,7 +17,7 @@ export default function ErrorPage({ error }) {
 	}, [error]);
 
 	const handleHardReload = () => {
-		window.location.reload(true);
+		window.location.reload();
 	};
 
 	return (

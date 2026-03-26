@@ -1,8 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Episode, Show } from './types';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 
 // Centralized API key - always use environment variable
 const getApiKey = () => {
@@ -37,28 +35,6 @@ export async function fetchRowData(link: string) {
 		console.log(error);
 	}
 }
-export function useRowData(link: string) {
-	return useQuery({
-		queryKey: ['rowData', link],
-		queryFn: () => fetchRowData(link),
-		staleTime: 1000 * 60 * 60 * 24,
-		gcTime: 1000 * 60 * 60 * 24,
-	});
-}
-
-export async function fetchDetails(id: string, type: string) {
-	try {
-		const url = new URL(
-			`https://consumet-taupe-seven.vercel.app/meta/tmdb/info/${id}?type=${type}`
-		);
-		const response = await fetch(url.toString(), { cache: 'no-cache' });
-		if (!response.ok) throw new Error('Failed to fetch data');
-		const data = await response.json();
-		return data;
-	} catch (error) {
-		console.log(error);
-	}
-}
 export async function fetchDetailsTMDB(id: string, type: string) {
 	try {
 		const url = `https://api.themoviedb.org/3/${type}/${id}`;
@@ -80,9 +56,9 @@ export async function fetchDetailsTMDB(id: string, type: string) {
 		throw error;
 	}
 }
-export async function fetchRecommendations(id: string, showType: string, type: string) {
+export async function fetchRecommendations(id: string, showType: string, type: string, page: number = 1) {
 	try {
-		const url = `https://api.themoviedb.org/3/${showType}/${id}/${type}?language=en-US&page=1`;
+		const url = `https://api.themoviedb.org/3/${showType}/${id}/${type}?language=en-US&page=${page}`;
 		const response = await fetch(url, {
 			headers: {
 				Authorization: `Bearer ${getApiKey()}`,
@@ -100,28 +76,25 @@ export async function fetchRecommendations(id: string, showType: string, type: s
 		throw error;
 	}
 }
-export async function fetchMovieLinks(movie: string, longID: string, callback: any) {
+
+export async function fetchReviews(id: string, type: string, page: number = 1) {
 	try {
-		const url = new URL(
-			`https://consumet-taupe-seven.vercel.app/movies/flixhq/watch?episodeId=${movie}&mediaId=${longID}&server=vidcloud`
-		);
-		const response = await fetch(url.toString());
-		if (!response.ok) throw new Error('Failed to fetch data');
-		const data = await response.json();
-		callback(null, data);
-	} catch (error) {
-		callback(error);
-	}
-}
-export async function fetchsusflixLinks(movie: string) {
-	try {
-		const url = new URL(`https://susflix.tv/api/movie?id=${movie}`);
-		const response = await fetch(url.href);
-		if (!response.ok) throw new Error('Failed to fetch data');
+		const url = `https://api.themoviedb.org/3/${type}/${id}/reviews?language=en-US&page=${page}`;
+		const response = await fetch(url, {
+			headers: {
+				Authorization: `Bearer ${getApiKey()}`,
+				accept: 'application/json',
+			},
+		});
+		if (!response.ok) {
+			console.error(`Failed to fetch reviews for ${type}/${id}:`, response.status);
+			throw new Error(`Failed to fetch reviews: ${response.status}`);
+		}
 		const data = await response.json();
 		return data;
 	} catch (error) {
-		console.log(error);
+		console.error('fetchReviews error:', error);
+		throw error;
 	}
 }
 
@@ -143,24 +116,6 @@ export async function fetchShowData(endpoint: string) {
 
 	const { results } = await response.json();
 	return results;
-}
-
-export async function getNewAndPopularShows() {
-	try {
-		const topRatedTV = await fetchShowData('tv/top_rated');
-		const topRatedMovie = await fetchShowData('movie/top_rated');
-		const trendingMovie = await fetchShowData('trending/movie/week');
-		const trendingTv = await fetchShowData('trending/tv/week');
-
-		return {
-			topRatedTV,
-			topRatedMovie,
-			trendingTv,
-			trendingMovie,
-		};
-	} catch (error: any) {
-		throw new Error('Failed to fetch shows: ' + error.message);
-	}
 }
 
 export async function searchShows(query: string) {
@@ -185,43 +140,6 @@ export async function searchShows(query: string) {
 	return {
 		results: popularShows,
 	};
-}
-
-export function formatRelativeTime(airDate: string): string {
-	const now = new Date();
-	const episodeDate = new Date(airDate);
-	const timeDifference = episodeDate.getTime() - now.getTime();
-	const daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-	if (daysDifference > 1) {
-		return `${daysDifference} days`;
-	} else if (daysDifference === 1) {
-		return '1 day';
-	} else {
-		const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
-		if (hoursDifference >= 0) return `${hoursDifference} hours`;
-		else return '';
-	}
-}
-
-export async function fetchCarousalData(category: string, type: string) {
-	try {
-		const url = new URL(
-			`https://api.themoviedb.org/3/${category}/${type}?language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1`
-		);
-		const headers = {
-			Authorization: `Bearer ${getApiKey()}`,
-		};
-		const response = await fetch(url.toString(), {
-			headers,
-			next: { revalidate: 60 * 60 * 24 * 7 },
-		});
-		if (!response.ok) throw new Error('Failed to fetch data');
-		const data = await fetchShowData('tv/top_rated');
-		console.log(data);
-		return data;
-	} catch (error) {
-		console.log(error);
-	}
 }
 
 export async function fetchGenres(type: string) {
@@ -277,19 +195,87 @@ export const fetchSeasonEpisodes = async (
 ): Promise<Episode[]> => {
 	try {
 		const url = `https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?language=en-US`;
-		const response = await axios.get(url, {
+		const response = await fetch(url, {
 			headers: {
 				Authorization: `Bearer ${getApiKey()}`,
-				accept: 'application/json'
-			}
+				accept: 'application/json',
+			},
 		});
-		if (response.data && response.data.episodes) {
-			return response.data.episodes;
-		} else {
-			throw new Error('No episodes data found in the response');
+		if (!response.ok) throw new Error(`Failed to fetch season ${seasonNumber}`);
+		const data = await response.json();
+		if (data?.episodes) {
+			return data.episodes;
 		}
+		throw new Error('No episodes data found in the response');
 	} catch (error) {
 		console.error('Error fetching season episodes:', error);
 		throw error;
 	}
 };
+
+/**
+ * Fetch anime shows from TMDB using the discover endpoint.
+ * Anime = Japanese language (ja) + Animation genre (16).
+ */
+export async function fetchAnimeShows(page: number = 1, sortBy: string = 'popularity.desc') {
+	const headers = {
+		Authorization: `Bearer ${getApiKey()}`,
+		accept: 'application/json',
+	};
+
+	const queryParams = new URLSearchParams({
+		include_adult: 'false',
+		include_video: 'false',
+		language: 'en-US',
+		page: page.toString(),
+		sort_by: sortBy,
+		with_genres: '16',
+		with_original_language: 'ja',
+	});
+
+	const url = `https://api.themoviedb.org/3/discover/tv?${queryParams.toString()}`;
+
+	const res = await fetch(url, {
+		headers,
+		next: { revalidate: 60 * 60 * 6 }, // 6 hour cache
+	});
+
+	if (!res.ok) {
+		throw new Error('Failed to fetch anime shows');
+	}
+
+	const data = await res.json();
+	return data.results;
+}
+
+/**
+ * Fetch anime by a specific sub-category (e.g. action anime, comedy anime).
+ * Combines the anime base filter (ja + Animation) with an additional genre.
+ */
+export async function fetchAnimeByGenre(genreId: string, page: number = 1) {
+	const headers = {
+		Authorization: `Bearer ${getApiKey()}`,
+		accept: 'application/json',
+	};
+
+	const queryParams = new URLSearchParams({
+		include_adult: 'false',
+		include_video: 'false',
+		language: 'en-US',
+		page: page.toString(),
+		sort_by: 'popularity.desc',
+		with_genres: `16,${genreId}`,
+		with_original_language: 'ja',
+	});
+
+	const url = `https://api.themoviedb.org/3/discover/tv?${queryParams.toString()}`;
+
+	const res = await fetch(url, { headers });
+
+	if (!res.ok) {
+		throw new Error('Failed to fetch anime by genre');
+	}
+
+	const data = await res.json();
+	return data.results;
+}

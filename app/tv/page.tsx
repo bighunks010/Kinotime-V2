@@ -1,10 +1,8 @@
 
 import CarousalComponent from "@/components/common/CarousalComponent";
 import RecentlyWatchedTV from "@/components/common/RecentlyWatched";
-import RecentlyWatched from "@/components/common/RecentlyWatched";
 import WatchList from "@/components/common/WatchList";
 import FetchAndRenderRow from "@/components/container/FetchAndRenderRow";
-import RowContainer from "@/components/container/RowContainer";
 import GenreGrid from "@/components/genre-card/genre-grid";
 import RowLoader from "@/components/loading/RowLoader";
 import { fetchGenres } from "@/lib/utils";

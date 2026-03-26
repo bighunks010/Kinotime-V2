@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { GalleryVerticalEnd, Grid, List, X } from 'lucide-react';
+import { GalleryVerticalEnd, Grid, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
 	SelectTrigger,
@@ -14,17 +14,16 @@ import { Carousel } from '../ui/carousel';
 import { SeasonTabsProps } from '@/lib/types';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSeasonEpisodes } from '@/lib/tmdb-fetch-helper';
+import { fetchSeasonEpisodes } from '@/lib/utils';
 import { Card, CardContent } from '../ui/card';
 import { SeasonContent } from './SeasonContent';
 import { TVContainer } from '../common/TVContainer';
-import { parseInt, set } from 'lodash';
 import { useEpisodeStore } from '@/store/episodeStore';
 
 const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons, showId }) => {
 	const searchParams = useSearchParams();
 	const [activeSeason, setActiveSeason] = useState<number>(
-		parseInt(searchParams.get('season') || (seasons && String(seasons[0]?.season_number)))
+		Number(searchParams.get('season') || seasons?.[0]?.season_number)
 	);
 
 	const [view, setView] = useState<'grid' | 'carousel'>('carousel');
@@ -55,7 +54,7 @@ const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons, showId }) => {
 		if (currentEpisode < currentSeasonEpisodes) {
 			return {
 				season: currentSeason,
-				episode: parseInt(currentEpisode) + 1,
+				episode: Number(currentEpisode) + 1,
 			};
 		} else if (currentSeasonIndex < seasons.length - 1) {
 			return {

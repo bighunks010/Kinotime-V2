@@ -1,10 +1,9 @@
 import './globals.css';
-import type { Metadata } from 'next';""
+import type { Metadata } from 'next';
 
 import { Toaster } from '@/components/ui/toaster';
 
 import TanstackQueryProvider from '@/components/providers/TanstackQueryProvider';
-import { Suspense } from 'react';
 
 export const metadata: Metadata = {
 	title: 'Kinotime - Stream all the kino into your silly eyeballs KINO',
@@ -63,16 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				/>
 			</head>
 			<body>
-					
-					<TanstackQueryProvider>
-						<Suspense>
-							
-						</Suspense>
-						
-						{children}
-						<Toaster />
-					</TanstackQueryProvider>
-			
+				<TanstackQueryProvider>
+					{children}
+					<Toaster />
+				</TanstackQueryProvider>
 			</body>
 		</html>
 	);

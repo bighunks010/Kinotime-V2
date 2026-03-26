@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/carousel';
 import { Show } from '@/lib/types';
 import CarousalCard from './DetailsCard';
-import { fetchCarousalData, fetchShowData } from "@/lib/utils";
+import { fetchShowData } from "@/lib/utils";
 
 
 

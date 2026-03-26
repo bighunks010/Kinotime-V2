@@ -14,7 +14,7 @@ const RelatedShowsComponent = dynamic(
   }
 );
 
-const tabs = ["Recommendations"];
+const tabs = ["Recommendations", "Reviews"];
 
 interface TabProps {
   text: string;

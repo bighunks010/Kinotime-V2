@@ -1,6 +1,5 @@
 import Details from "@/components/common/Details";
-import { Header } from "@/components/common/header";
-import { fetchDetails, fetchDetailsTMDB } from "@/lib/utils";
+import { fetchDetailsTMDB } from "@/lib/utils";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import React from "react";

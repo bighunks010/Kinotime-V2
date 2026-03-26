@@ -4,11 +4,8 @@ import Link from "next/link";
 import React from "react";
 import { Motiondiv } from "./MotionDiv";
 import { TextGlitch } from "../animated-common/TextFlip";
-import { Skeleton } from "../ui/skeleton";
 import { tmdbImage } from "@/lib/tmdb-image";
-import { ImageIcon, Play } from "lucide-react";
-import { TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
-import { Tooltip, TooltipTrigger } from "../ui/tooltip";
+import { ImageIcon } from "lucide-react";
 import { Badge } from "../ui/badge";
 import BlurFade from "../ui/blur-fade";
 
@@ -37,7 +34,7 @@ export default function ShowCard(props: {
     return (
         <Link
         onClick={() => props.onClick && props.onClick(show)}
-        href={`/${show.media_type || type}/${show.id}${(show.media_type || type) === "tv" ? "?season=1&episode=1" : ""}`}
+        href={`/${show.media_type || type}/${show.id}${(show.media_type || type) === "tv" || type === "anime" ? "?season=1&episode=1" : ""}`}
     >
         <Motiondiv
             initial="hidden"
