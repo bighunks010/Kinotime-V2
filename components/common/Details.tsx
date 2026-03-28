@@ -6,14 +6,17 @@ import MoreDetailsContainer from '../container/MoreDetailsContainer';
 import ShowDetails from '../container/tv-details.tsx/TVDetails';
 import RelatedShowsComponent from '../container/RelatedShowContainer';
 import useAnimeStore from '@/store/animeStore';
-import { isAnimeShow, fetchMalId, fetchAnimeFranchise } from '@/lib/anime';
+import { isAnimeShow, fetchMalId, fetchAnimeFranchise, getAnimeOverride } from '@/lib/anime';
 import ReviewsSection from '../container/ReviewsSection';
 
 const Details = (props: any) => {
 	const { data, type, id } = props;
-	const { setIsAnime, setMalId, setFranchise, setTmdbSeasonEpCounts } = useAnimeStore();
+	const {
+		setIsAnime, setMalId, setFranchise,
+		setTmdbSeasonEpCounts, setUseAbsoluteEp,
+	} = useAnimeStore();
 
-	// Detect anime, fetch MAL ID, then fetch franchise (sequel chain) for episode mapping
+	// Detect anime, resolve MAL ID (override map → year-aware search), fetch franchise
 	useEffect(() => {
 		const anime = isAnimeShow(data);
 		setIsAnime(anime);
@@ -27,22 +30,47 @@ const Details = (props: any) => {
 					.map((s: any) => s.episode_count ?? 0) ?? [];
 			setTmdbSeasonEpCounts(epCounts);
 
-			const primaryTitle = data.name || data.title;
-			const alternateTitle = data.original_name || data.original_title;
+			const tmdbId = data.id;
+			const override = getAnimeOverride(tmdbId);
 
-			fetchMalId(primaryTitle, alternateTitle).then(async (malId) => {
-				setMalId(malId);
-				if (malId) {
-					const franchiseData = await fetchAnimeFranchise(malId);
-					setFranchise(franchiseData);
+			if (override) {
+				// ── Override found — use hardcoded MAL ID ──
+				setMalId(override.malId);
+				setUseAbsoluteEp(override.useAbsoluteEp ?? false);
+
+				if (override.manualFranchise) {
+					// Use hardcoded franchise (e.g. JoJo where AniList chain is broken)
+					setFranchise(override.manualFranchise);
+				} else if (!override.useAbsoluteEp) {
+					// Auto-fetch franchise chain for season→part mapping
+					fetchAnimeFranchise(override.malId).then(setFranchise);
+				} else {
+					setFranchise([]);
 				}
-			});
+			} else {
+				// ── No override — year-aware AniList search + franchise chain ──
+				setUseAbsoluteEp(false);
+				const primaryTitle = data.name || data.title;
+				const alternateTitle = data.original_name || data.original_title;
+				const year = data.first_air_date
+					? parseInt(data.first_air_date.split('-')[0])
+					: undefined;
+
+				fetchMalId(primaryTitle, alternateTitle, year).then(async (malId) => {
+					setMalId(malId);
+					if (malId) {
+						const franchiseData = await fetchAnimeFranchise(malId);
+						setFranchise(franchiseData);
+					}
+				});
+			}
 		} else {
 			setMalId(null);
 			setFranchise([]);
 			setTmdbSeasonEpCounts([]);
+			setUseAbsoluteEp(false);
 		}
-	}, [data, setIsAnime, setMalId, setFranchise, setTmdbSeasonEpCounts]);
+	}, [data, setIsAnime, setMalId, setFranchise, setTmdbSeasonEpCounts, setUseAbsoluteEp]);
 
 	const renderContent = (selected: string) => {
 		switch (selected) {

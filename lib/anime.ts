@@ -7,6 +7,74 @@ export interface FranchiseEntry {
 	episodes: number;
 }
 
+/* ─── Manual override map ────────────────────────────────────────── */
+
+export interface AnimeOverride {
+	malId: number;
+	/**
+	 * If true, TMDB already uses absolute episode numbers (e.g. S10E337 for
+	 * One Piece) so we pass episodeNumber straight to MegaPlay.
+	 */
+	useAbsoluteEp?: boolean;
+	/**
+	 * Manual franchise list. When provided, Details.tsx skips the AniList
+	 * sequel-chain fetch and uses these entries directly. Needed when the
+	 * auto-discovered chain is broken (e.g. ONA-format seasons in JoJo).
+	 */
+	manualFranchise?: FranchiseEntry[];
+}
+
+/**
+ * TMDB TV-show ID → override.
+ *
+ * Add entries here when:
+ *  - AniList title search returns the wrong MAL ID (remakes / shared names)
+ *  - A long-running show needs absolute episode numbering
+ *
+ * You can find TMDB IDs in the URL: themoviedb.org/tv/{id}
+ * MAL IDs are in the URL: myanimelist.net/anime/{id}
+ */
+export const ANIME_OVERRIDES: Record<number, AnimeOverride> = {
+	/* ── Long-runners (absolute episode numbering) ──────────────────── */
+	37854: { malId: 21, useAbsoluteEp: true },       // One Piece
+	12609: { malId: 223, useAbsoluteEp: true },       // Dragon Ball
+	12971: { malId: 813, useAbsoluteEp: true },       // Dragon Ball Z
+	12607: { malId: 225, useAbsoluteEp: true },       // Dragon Ball GT
+	62715: { malId: 30694, useAbsoluteEp: true },     // Dragon Ball Super
+	61709: { malId: 6033, useAbsoluteEp: true },      // Dragon Ball Z Kai
+	46260: { malId: 20, useAbsoluteEp: true },        // Naruto
+	31910: { malId: 1735, useAbsoluteEp: true },      // Naruto Shippūden
+	70881: { malId: 34566, useAbsoluteEp: true },     // Boruto
+
+	/* ── Absolute episode numbering (TMDB uses absolute ep numbers) ── */
+	46298: { malId: 11061, useAbsoluteEp: true },     // Hunter × Hunter (2011)
+
+	/* ── Disambiguation (shared names / wrong AniList match) ────────── */
+	45952: { malId: 136 },                             // Hunter × Hunter (1999)
+	60862: { malId: 2187 },                            // JoJo's Bizarre Adventure (1993 OVA)
+
+	/* ── Manual franchise (AniList chain broken by ONA/format gaps) ── */
+	45790: {
+		malId: 14719,
+		manualFranchise: [
+			{ malId: 14719, episodes: 26 },   // S1: Phantom Blood + Battle Tendency
+			{ malId: 20899, episodes: 24 },   // S2: Stardust Crusaders
+			{ malId: 26055, episodes: 24 },   //     Stardust Crusaders: Egypt Arc
+			{ malId: 31933, episodes: 39 },   // S3: Diamond is Unbreakable
+			{ malId: 37991, episodes: 39 },   // S4: Golden Wind
+			{ malId: 48661, episodes: 12 },   // S5: Stone Ocean Part 1
+			{ malId: 51367, episodes: 12 },   //     Stone Ocean Part 2
+			{ malId: 53273, episodes: 14 },   //     Stone Ocean Part 3
+			{ malId: 61469, episodes: 52 },   // S6: Steel Ball Run
+		],
+	},  // JoJo's Bizarre Adventure
+};
+
+/** Look up an override by TMDB show ID. Returns null if none exists. */
+export function getAnimeOverride(tmdbId: number): AnimeOverride | null {
+	return ANIME_OVERRIDES[tmdbId] ?? null;
+}
+
 /**
  * Detect if a show is anime based on TMDB data.
  * A show is anime if it's originally Japanese AND has the Animation genre.
@@ -49,13 +117,28 @@ async function queryAniList(
  * Fetch MyAnimeList ID by searching with the show's title.
  * Uses AniList's free GraphQL API (no auth required) which conveniently
  * exposes the MAL ID via the `idMal` field.
- * Tries the primary title first, then falls back to an alternate title.
+ *
+ * When a year is provided the query is tried with AniList's `seasonYear`
+ * filter first, which solves the remake / shared-name problem (e.g.
+ * Hunter × Hunter 1999 vs 2011).  Falls back to a plain title search if
+ * the year-filtered query returns nothing.
  */
 export async function fetchMalId(
 	title: string,
-	alternateTitle?: string
+	alternateTitle?: string,
+	year?: number
 ): Promise<number | null> {
-	const query = `
+	const queryWithYear = `
+		query ($search: String, $seasonYear: Int) {
+			Media(search: $search, type: ANIME, seasonYear: $seasonYear) {
+				id
+				idMal
+				title { romaji english native }
+			}
+		}
+	`;
+
+	const queryNoYear = `
 		query ($search: String) {
 			Media(search: $search, type: ANIME) {
 				id
@@ -65,16 +148,23 @@ export async function fetchMalId(
 		}
 	`;
 
-	const searchTitle = async (term: string): Promise<number | null> => {
-		const data = await queryAniList(query, { search: term });
+	const searchTitle = async (term: string, yr?: number): Promise<number | null> => {
+		// Try with year first (more precise)
+		if (yr) {
+			const data = await queryAniList(queryWithYear, { search: term, seasonYear: yr });
+			const malId = data?.data?.Media?.idMal;
+			if (malId) return malId;
+		}
+		// Fallback to plain search
+		const data = await queryAniList(queryNoYear, { search: term });
 		return data?.data?.Media?.idMal || null;
 	};
 
-	let id = await searchTitle(title);
+	let id = await searchTitle(title, year);
 	if (id) return id;
 
 	if (alternateTitle && alternateTitle !== title) {
-		id = await searchTitle(alternateTitle);
+		id = await searchTitle(alternateTitle, year);
 	}
 	return id;
 }

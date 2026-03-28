@@ -22,6 +22,13 @@ interface AnimeState {
 	/** Episode count per TMDB season (index 0 = season 1, etc.) */
 	tmdbSeasonEpCounts: number[];
 	setTmdbSeasonEpCounts: (counts: number[]) => void;
+
+	/**
+	 * When true, collapse TMDB seasons into one absolute episode number
+	 * and skip franchise chain resolution entirely (long-runners like One Piece).
+	 */
+	useAbsoluteEp: boolean;
+	setUseAbsoluteEp: (value: boolean) => void;
 }
 
 const useAnimeStore = create<AnimeState>()(
@@ -41,6 +48,9 @@ const useAnimeStore = create<AnimeState>()(
 
 			tmdbSeasonEpCounts: [],
 			setTmdbSeasonEpCounts: (counts) => set({ tmdbSeasonEpCounts: counts }),
+
+			useAbsoluteEp: false,
+			setUseAbsoluteEp: (value) => set({ useAbsoluteEp: value }),
 		}),
 		{
 			name: 'anime-lang-storage',

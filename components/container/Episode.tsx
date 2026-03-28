@@ -31,13 +31,25 @@ export default function Episode(props: EpisodeProps) {
 	const malId = useAnimeStore((state) => state.malId);
 	const franchise = useAnimeStore((state) => state.franchise);
 	const tmdbSeasonEpCounts = useAnimeStore((state) => state.tmdbSeasonEpCounts);
+	const useAbsoluteEp = useAnimeStore((state) => state.useAbsoluteEp);
 
-	// Resolve the correct MAL ID + episode number using the franchise map.
-	// Handles TMDB lumping multiple MAL seasons into one (e.g. 60 eps → 3×20).
-	// Falls back to raw malId + episodeNumber when franchise data isn't loaded yet.
+	// Resolve the correct MAL ID + episode number.
+	// Three paths:
+	//  1. Absolute mode  — collapse TMDB seasons into one number (One Piece, Naruto, etc.)
+	//  2. Franchise mode — walk the sequel chain to find the right MAL entry (JoJo, etc.)
+	//  3. Fallback       — use raw malId + episodeNumber (before data loads)
 	const resolved = useMemo(() => {
 		if (!isAnime) return null;
 
+		// ── Absolute mode ────────────────────────────────────────────
+		// For long-runners (One Piece, Naruto, DBZ, etc.) TMDB already uses
+		// absolute episode numbers within each season (e.g. Season 10 starts
+		// at episode_number 337, not 1). Just pass it straight through.
+		if (useAbsoluteEp && malId) {
+			return { malId, episode: Number(episodeNumber || 1) };
+		}
+
+		// ── Franchise mode ───────────────────────────────────────────
 		if (franchise.length > 0) {
 			return resolveAnimeEpisode(
 				franchise,
@@ -47,13 +59,13 @@ export default function Episode(props: EpisodeProps) {
 			);
 		}
 
-		// Fallback: use the single malId directly (before franchise loads)
+		// ── Fallback ─────────────────────────────────────────────────
 		if (malId) {
 			return { malId, episode: Number(episodeNumber || 1) };
 		}
 
 		return null;
-	}, [isAnime, franchise, malId, seasonNumber, episodeNumber, tmdbSeasonEpCounts]);
+	}, [isAnime, useAbsoluteEp, franchise, malId, seasonNumber, episodeNumber, tmdbSeasonEpCounts]);
 
 	const generateUrl = (
 		domain: string,
@@ -267,6 +279,7 @@ export default function Episode(props: EpisodeProps) {
 				)}
 			</div>
 			<iframe
+				key={provider.url}
 				ref={iframeRef}
 				allowFullScreen
 				className="w-full h-full border-primary border rounded-lg aspect-video font-mono"
