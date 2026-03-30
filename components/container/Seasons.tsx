@@ -20,7 +20,9 @@ import { SeasonContent } from './SeasonContent';
 import { TVContainer } from '../common/TVContainer';
 import { useEpisodeStore } from '@/store/episodeStore';
 
-const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons, showId }) => {
+const SeasonTabs: React.FC<SeasonTabsProps> = ({ seasons: rawSeasons, showId }) => {
+	// Filter out Season 0 (Specials)
+	const seasons = rawSeasons?.filter((s: any) => s.season_number > 0);
 	const searchParams = useSearchParams();
 	const [activeSeason, setActiveSeason] = useState<number>(
 		Number(searchParams.get('season') || seasons?.[0]?.season_number)

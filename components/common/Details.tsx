@@ -52,8 +52,9 @@ const Details = (props: any) => {
 				setUseAbsoluteEp(false);
 				const primaryTitle = data.name || data.title;
 				const alternateTitle = data.original_name || data.original_title;
-				const year = data.first_air_date
-					? parseInt(data.first_air_date.split('-')[0])
+				const dateStr = data.first_air_date || data.release_date;
+				const year = dateStr
+					? parseInt(dateStr.split('-')[0])
 					: undefined;
 
 				fetchMalId(primaryTitle, alternateTitle, year).then(async (malId) => {
