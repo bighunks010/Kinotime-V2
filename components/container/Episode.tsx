@@ -97,10 +97,10 @@ export default function Episode(props: EpisodeProps) {
 		return [
 			...megaplaySources,
 			{
-				name: 'vidsrc.xyz',
+				name: 'vidsrcme.su',
 				label: 'VIDSRC',
 				position: 5,
-				url: generateUrl('vidsrc.xyz', type, id, seasonNumber, episodeNumber),
+				url: generateUrl('vidsrcme.su', type, id, seasonNumber, episodeNumber),
 			},
 			{
 				name: 'vidlink',
@@ -111,12 +111,17 @@ export default function Episode(props: EpisodeProps) {
 						? `https://vidlink.pro/movie/${id}`
 						: `https://vidlink.pro/tv/${id}/${seasonNumber}/${episodeNumber}?title=true`,
 			},
+	
 			{
-				name: 'vidsrc.cc/v3',
-				label: 'KDStream',
+				name: 'filmu',
+				label: 'FilmU',
 				ads: 'false',
-				url: generateUrl('vidsrc.cc/v3', type, id, seasonNumber, episodeNumber),
+				url:
+					type === 'movie'
+						? `https://embed.filmu.in/movie/${id}`
+						: `https://embed.filmu.in/tv/${id}/${seasonNumber}/${episodeNumber}`,
 			},
+
 			{
 				name: 'SmashyStream',
 				label: 'SmashyStream',

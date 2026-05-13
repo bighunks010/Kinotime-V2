@@ -9,7 +9,7 @@ interface VideoSourceState {
 const useVideoSourceStore = create<VideoSourceState>()(
   persist(
     (set) => ({
-      selectedSource: 'vidsrc.xyz', // Default source
+      selectedSource: 'vidsrcme.su', // Default source
       setSelectedSource: (source) => set({ selectedSource: source }),
     }),
     {
